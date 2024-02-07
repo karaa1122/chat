@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="message-box">
+  <h2>Chat Room: {{code}}</h2>
+  <div class="messages" id="messages"></div>
+  <div class="inputs">
+    <input
+      type="text"
+      placeholder="Message"
+      name="message"
+      id="message"
+    />
+    <button type="button" name="send" id="send-btn" onClick="sendMessage()">Send</button>
+    <!-- File Upload Form -->
+    <form id="file-upload-form" enctype="multipart/form-data">
+      <input type="file" id="file-input" name="file">
+      <button type="button" onClick="uploadFile()">Upload File</button>
+      <button type="button" id="clear-btn">Clear Messages</button>
+
+    </form>
+  </div>
+</div>
+<script type="text/javascript">
+  var socketio = io();
+
+  const messages = document.getElementById("messages");
+
+  const createMessage = (name, msg) => {
+    const content = `
+    <div class="text">
+        <span>
+            <strong>${name}</strong>: ${msg}
+        </span>
+        <span class="muted">
+            ${new Date().toLocaleString()}
+        </span>
+    </div>
+    `;
+    messages.innerHTML += content;
+  };
+
+  socketio.on("message", (data) => {
+    createMessage(data.name, data.message);
+  });
+
+  socketio.on("file_uploaded", (data) => {
+    const msg = `<a href="/uploads/${data.filename}" target="_blank">File uploaded: ${data.filename}</a>`;
+    createMessage("System", msg);
+  });
+
+  const sendMessage = () => {
+    const message = document.getElementById("message");
+    if (message.value === "") return;
+    socketio.emit("message", { data: message.value });
+    message.value = "";
+  };
+
+  const uploadFile = () => {
+    const formData = new FormData();
+    const fileInput = document.getElementById("file-input");
+    if(fileInput.files.length === 0) return; // No file chosen
+    formData.append('file', fileInput.files[0]);
+
+    fetch('/upload', {
+      method: 'POST',
+      body: formData,
+    }).then(response => {
+      if(response.ok) {
+        console.log("File uploaded successfully.");
+        fileInput.value = ''; // Reset file input
+      }
+    }).catch(error => {
+      console.error("Error uploading file:", error);
+    });
+  };
+</script>
+{% for msg in messages %}
+<script type="text/javascript">
+  createMessage("{{msg.name}}", "{{msg.message}}");
+</script>
+{% endfor %}
+{% endblock %}
