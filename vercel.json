@@ -1,15 +1,14 @@
-
 {
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/main.py"
-      }
+    "builds": [
+        {
+            "src": "main.py",
+            "use": "@vercel/python"
+        }
     ],
-    "functions": {
-      "api": {
-        "runtime": "python3.12.0"
-      }
-    }
-  }
-  
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "main.py"
+        }
+    ]
+}
